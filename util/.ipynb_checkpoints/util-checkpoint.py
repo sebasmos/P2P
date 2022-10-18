@@ -48,7 +48,7 @@ def tensor2im(input_image, imtype=np.uint8):
         if image_numpy.shape[0] == 1:  # grayscale to RGB
             image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
         if np.absolute(image_numpy.max())>=1.0 or np.absolute(image_numpy.min())>=1.0:
-            print("re-normalizing")
+            #print("re-normalizing")
             image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
             image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
         else:

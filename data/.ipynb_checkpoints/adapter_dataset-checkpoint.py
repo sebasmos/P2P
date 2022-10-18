@@ -36,19 +36,19 @@ class adapterDataset(BaseDataset):
         img_path = os.path.join(self.root, "img_he", self.imgs[index])        
         targets_path = os.path.join(self.root, "img_if", self.targets[index])
         img = tifffile.imread(img_path)
-        target = tifffile.imread(targets_path)#.astype("float32")
-        target = skimage.util.img_as_float32(target)
+        target = tifffile.imread(targets_path)
+        target = skimage.util.img_as_float32(target)#**ADDED**
         # Normalize images
         CHANNELS = (0, 3, 17)
         img = np.moveaxis(img, 0, 2)
         target = np.dstack([
             skimage.exposure.rescale_intensity(
                 target[c],
-                in_range=(np.percentile(target[c], 5), np.percentile(target[c], 99.9)),
+                in_range=(np.percentile(target[c], 1), np.percentile(target[c], 99.9)),#**ADDED**: reduce clipping to 1%
                 out_range=(0, 1)
             ) 
             for c in CHANNELS
-        ]).astype(np.float32)
+        ]).astype(np.float32)#**ADDED**
         
         img, target = self.transforms_he(img), self.transforms_if(target)
         #return {'A': img, 'B': target, 'A_paths': img_path, 'B_paths': targets_path}
@@ -69,5 +69,7 @@ def get_transform(train, size=256, HE_IF = "he"):
             transforms.append(T.Resize((size,size)))
         else:
             transforms.append(T.Resize((size,size)))
+    # Adding transformation to both inputs
+    transforms.append(T.RandomHorizontalFlip(0.5))
         
     return T.Compose(transforms)
