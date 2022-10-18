@@ -40,6 +40,16 @@ def tensor2im(input_image, imtype=np.uint8):
     if not isinstance(input_image, np.ndarray):
         if isinstance(input_image, torch.Tensor):  # get the data from a variable
             image_tensor = input_image.data
+            """
+            if  input_image.min()>0:
+                image_tensor = input_image.data
+            else:
+                import torch.nn as nn
+                # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html
+                m = nn.Softmax(dim=1)
+                image_tensor = input_image.data
+                image_tensor = m(input_image)
+            """
         else:
             return input_image
         image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
@@ -47,12 +57,15 @@ def tensor2im(input_image, imtype=np.uint8):
     
         if image_numpy.shape[0] == 1:  # grayscale to RGB
             image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
+        
         if np.absolute(image_numpy.max())>=1.0 or np.absolute(image_numpy.min())>=1.0:
             #print("re-normalizing")
             image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
             image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
         else:
             image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
+        
+        #image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
     else:  # if it is a numpy array, do nothing
         image_numpy = input_image
     image_numpy = image_numpy.astype(imtype)
