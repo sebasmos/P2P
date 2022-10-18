@@ -1,3 +1,6 @@
+*.html
+*.txt
+*.ipynb_checkpoints
 *.json
 .DS_Store
 debug*
