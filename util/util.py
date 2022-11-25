@@ -29,7 +29,7 @@ def tensor2im(input_image, imtype=np.uint8):
         else:
             return input_image
         image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
-        print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+        #print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
     
         if image_numpy.shape[0] == 1:  # grayscale to RGB
             image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
@@ -48,7 +48,7 @@ def tensor2im(input_image, imtype=np.uint8):
     else:  # if it is a numpy array, do nothing
         image_numpy = input_image
     image_numpy = image_numpy.astype(imtype)
-    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    #print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
     return image_numpy
 def tensor2im_all(input_image, imtype=np.uint8):
     """"Converts a Tensor array into a numpy image array.

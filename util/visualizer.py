@@ -45,7 +45,7 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256, use_w
         save_path = os.path.join(image_dir, image_name)
         #util.save_image(im, save_path, aspect_ratio=aspect_ratio)
         im = np.transpose(im, (1,2,0))
-        print("FUNCTION save_images: ", im.shape)
+        #print("FUNCTION save_images: ", im.shape)
         #import pdb
         #pdb.set_trace()
         util.save_image(im, save_path, aspect_ratio=aspect_ratio)

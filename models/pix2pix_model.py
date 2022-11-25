@@ -118,9 +118,9 @@ class Pix2PixModel(BaseModel):
         self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
         # Getting individual L1 losses
-        for ch in range(self.fake_B.shape[1]):#BATCH-CHW x4
-            self.splitLoss["Channel"].append(ch)
-            self.splitLoss["loss"].append((self.criterionL1(self.fake_B[:,ch,:,:], self.real_B[:,ch,:,:]) * self.opt.lambda_L1).detach().cpu().numpy())
+        for ch in range(self.fake_B.shape[1]):#**ADDED**: BATCH-CHW x4
+            self.splitLoss["Channel"].append(ch)#**ADDED**: 
+            self.splitLoss["loss"].append((self.criterionL1(self.fake_B[:,ch,:,:], self.real_B[:,ch,:,:]) * self.opt.lambda_L1).detach().cpu().numpy())#**ADDED**: 
         # need to store each line on real time without closing the file.
 
     def optimize_parameters(self):
