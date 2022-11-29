@@ -89,7 +89,7 @@ class dscrc0nexp12Dataset(BaseDataset):
             target = np.dstack([
                 skimage.exposure.rescale_intensity(
                     target[c],
-                    in_range=(np.percentile(target[c], 1), np.percentile(target[c], 99.9)),#**ADDED**: reduce clipping to 1%
+                    in_range=(np.percentile(target[c], 0.17), np.percentile(target[c], 99.99)),#**ADDED**: reduce clipping to 1%
                     out_range=(0, 1)
                 ) 
                 for c in CHANNELS
@@ -197,6 +197,8 @@ def get_transform_N(opt, params=None, grayscale=False, method=transforms.Interpo
                 transform_list.append(transforms.Lambda(lambda img: __crop(img, params['crop_pos'], opt.crop_size)))
     #transform_list.append(transforms.RandomHorizontalFlip(0.5))
     #transform_list.append(transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)))
+    #transform_list.append(transforms.RandomHorizontalFlip(0.5))
+    #transform_list.append(transforms.RandomVerticalFlip(0.5))
     return transforms.Compose(transform_list)
         
 print("loaded")
