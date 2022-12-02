@@ -98,7 +98,7 @@ if __name__ == '__main__':
         epoch_index = len(tt_np)+1   # get epoch index on last position
         tt_np.insert(epoch_index, epoch)
         losses_per_ch.append(tt_np)
-        with open("loss.pkl", "wb") as pickle_file:
+        with open(f"loss_{opt.name}.pkl", "wb") as pickle_file:
                 pickle.dump(losses_per_ch, pickle_file)
             
 

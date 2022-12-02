@@ -16,11 +16,6 @@ try:
 except ImportError:
     print('Warning: wandb package cannot be found. The option "--use_wandb" will result in error.')
 
-if sys.version_info[0] == 2:
-    VisdomExceptionBase = Exception
-else:
-    VisdomExceptionBase = ConnectionError
-
 
 def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256, use_wandb=False):
     """Save images to the disk.
@@ -86,12 +81,6 @@ class Visualizer():
         self.current_epoch = 0
         self.ncols = opt.display_ncols
 
-        if self.display_id > 0:  # connect to a visdom server given <display_port> and <display_server>
-            import visdom
-            self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, env=opt.display_env)
-            if not self.vis.check_connection():
-                self.create_visdom_connections()
-
         if self.use_wandb:
             self.wandb_run = wandb.init(project=self.wandb_project_name, name=opt.name, config=opt) if not wandb.run else wandb.run
             self.wandb_run._label(repo='CycleGAN-and-pix2pix')
@@ -111,12 +100,7 @@ class Visualizer():
         """Reset the self.saved status"""
         self.saved = False
 
-    def create_visdom_connections(self):
-        """If the program could not connect to Visdom server, this function will start a new server at port < self.port > """
-        cmd = sys.executable + ' -m visdom.server -p %d &>/dev/null &' % self.port
-        print('\n\nCould not connect to Visdom server. \n Trying to start a server....')
-        print('Command: %s' % cmd)
-        Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+
 
     def display_current_results(self, visuals, epoch, save_result):
         """Display current results on visdom; save current results to an HTML file.
@@ -183,18 +167,7 @@ class Visualizer():
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
         self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']])
-        try:
-            self.vis.line(
-                X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
-                Y=np.array(self.plot_data['Y']),
-                opts={
-                    'title': self.name + ' loss over time',
-                    'legend': self.plot_data['legend'],
-                    'xlabel': 'epoch',
-                    'ylabel': 'loss'},
-                win=self.display_id)
-        except VisdomExceptionBase:
-            self.create_visdom_connections()
+
         if self.use_wandb:
             self.wandb_run.log(losses)
 

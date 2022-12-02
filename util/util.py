@@ -7,7 +7,28 @@ import os
 import skimage
 from skimage import io
 
+
 def tensor2im(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy array
+        if image_numpy.shape[0] == 1:  # grayscale to RGB
+            image_numpy = np.tile(image_numpy, (3, 1, 1))
+        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling
+    else:  # if it is a numpy array, do nothing
+        image_numpy = input_image
+    return image_numpy.astype(imtype)
+
+def tensor2im_changed(input_image, imtype=np.uint8):
     """"Converts a Tensor array into a numpy image array.
     Parameters:
         input_image (tensor) --  the input image tensor array
@@ -50,63 +71,9 @@ def tensor2im(input_image, imtype=np.uint8):
     image_numpy = image_numpy.astype(imtype)
     #print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
     return image_numpy
-def tensor2im_all(input_image, imtype=np.uint8):
-    """"Converts a Tensor array into a numpy image array.
-    Parameters:
-        input_image (tensor) --  the input image tensor array
-        imtype (type)        --  the desired type of the converted numpy array
-    """
-    if not isinstance(input_image, np.ndarray):
-        if isinstance(input_image, torch.Tensor):  # get the data from a variable
-            image_tensor = input_image.data
-            """
-            if  input_image.min()>0:
-                image_tensor = input_image.data
-            else:
-                import torch.nn as nn
-                # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html
-                m = nn.Softmax(dim=1)
-                image_tensor = input_image.data
-                image_tensor = m(input_image)
-            """
-        else:
-            return input_image
-        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
-        #print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
-    
-        if image_numpy.shape[0] == 1:  # grayscale to RGB
-            image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
-        
-        #image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=np.uint8)
-        # """
-        if np.absolute(image_numpy.max())>=1.0 or np.absolute(image_numpy.min())>=1.0:
-            
-            image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
-            
-            if image_numpy.shape[0]==3:
-                image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
-            else:
-                
-                image_numpy = skimage.util.img_as_ubyte(image_numpy)
-        else:
-            if image_numpy.shape[0]==3:
-                image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
-            else:
-                image_numpy = skimage.util.img_as_ubyte(image_numpy)
-                
-        
-            #image_numpy = skimage.util.img_as_ubyte(image_numpy)
-        #  """
-        #image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
-    else:  # if it is a numpy array, do nothing
-        image_numpy = input_image
-    image_numpy = image_numpy.astype(imtype)
-    #print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
-    return image_numpy
 
 def diagnose_network(net, name='network'):
     """Calculate and print the mean of average absolute(gradients)
-
     Parameters:
         net (torch network) -- Torch network
         name (str) -- the name of the network
@@ -123,24 +90,44 @@ def diagnose_network(net, name='network'):
     print(mean)
 
 
-def save_image(image_numpy, image_path, aspect_ratio=1.0):
+def save_image(image_numpy, image_path):
     """Save a numpy image to the disk
 
     Parameters:
         image_numpy (numpy array) -- input numpy array
         image_path (str)          -- the path of the image
     """
-    print("Saving image on path ", image_path, "and shape: ", image_numpy.shape)
-    #image_numpy = np.dstack([
-    #            skimage.exposure.rescale_intensity(image_numpy[:,:,c], out_range=(0, 255)) 
-    #            for c in range(image_numpy.shape[2])
-    #        ])
+    image_pil = Image.fromarray(image_numpy)
+    image_pil.save(image_path)
+
+
+def save_image_v2(image_numpy, image_path, aspect_ratio=1.0):
+    """Save a numpy image to the disk
+    Parameters:
+        image_numpy (numpy array) -- input numpy array
+        image_path (str)          -- the path of the image
+    """
     io.imsave(image_path, image_numpy)
+    
+def save_image_v3(image_numpy, image_path, aspect_ratio=1.0):
+    """Save a numpy image to the disk
+    Parameters:
+        image_numpy (numpy array) -- input numpy array
+        image_path (str)          -- the path of the image
+    """
+
+    image_pil = Image.fromarray(image_numpy)
+    h, w, _ = image_numpy.shape
+
+    if aspect_ratio > 1.0:
+        image_pil = image_pil.resize((h, int(w * aspect_ratio)), Image.BICUBIC)
+    if aspect_ratio < 1.0:
+        image_pil = image_pil.resize((int(h / aspect_ratio), w), Image.BICUBIC)
+    image_pil.save(image_path)
 
 
 def print_numpy(x, val=True, shp=False):
     """Print the mean, min, max, median, std, and size of a numpy array
-
     Parameters:
         val (bool) -- if print the values of the numpy array
         shp (bool) -- if print the shape of the numpy array
@@ -156,7 +143,6 @@ def print_numpy(x, val=True, shp=False):
 
 def mkdirs(paths):
     """create empty directories if they don't exist
-
     Parameters:
         paths (str list) -- a list of directory paths
     """
@@ -169,7 +155,6 @@ def mkdirs(paths):
 
 def mkdir(path):
     """create a single empty directory if it didn't exist
-
     Parameters:
         path (str) -- a single directory path
     """
