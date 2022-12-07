@@ -53,10 +53,10 @@ class unalignedDataset(BaseDataset):
         btoA = self.opt.direction == 'BtoA'
         input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
         output_nc = self.opt.input_nc if btoA else self.opt.output_nc      # get the number of channels of output image
-        #self.transform_A = get_transform(train= True, size=256, HE_IF = "he")
-        #self.transform_B = get_transform(train= True, size=256, HE_IF = "if")
-        self.transform_A = get_transform_N(self.opt, grayscale=(input_nc == 1), Data_type = "HE")
-        self.transform_B = get_transform_N(self.opt, grayscale=(input_nc == 1), Data_type = "IF")
+        self.transform_A = get_transform(train= True, size=256, HE_IF = "he")
+        self.transform_B = get_transform(train= True, size=256, HE_IF = "if")
+        #self.transform_A = get_transform_N(self.opt, grayscale=(input_nc == 1), Data_type = "HE")
+        #self.transform_B = get_transform_N(self.opt, grayscale=(input_nc == 1), Data_type = "IF")
         #self.transform_B = get_transform_N(train=True, size=256 , HE_IF = "IF")
         assert self.A_size == self.B_size, "Every instance of A must have a corresponding instance of B!"
 
@@ -97,33 +97,7 @@ class unalignedDataset(BaseDataset):
                 ) 
                 for c in CHANNELS
             ]).astype(np.float32)#**ADDED**
-            
-            ############################################################
-           # apply image transformation
-            aug_HE = iaa.Sequential([
 
-                iaa.Sometimes(0.5,
-                              iaa.OneOf([iaa.Fliplr(1.0),
-                                         iaa.Flipud(1.0)]))
-            ], 
-                random_order=True)
-            aug_IF = iaa.Sequential([
-                iaa.Sometimes(0.5,
-                              iaa.OneOf([iaa.Fliplr(1.0),
-                                         iaa.Flipud(1.0)])),
-            ], 
-                random_order=True)
-            
-
-            # apply the same transform to both A and B
-            aug_det_HE = aug_HE.to_deterministic()
-            aug_det_IF = aug_IF.to_deterministic()
-            #import pdb
-            #pdb.set_trace()
-            img = aug_det_HE.augment_image(img).copy()
-            target = aug_det_IF.augment_image(target).copy()#,hooks=ia.HooksImages(activator=self.activator)).copy()
-
-            
             A = self.transform_A(img)
             B = self.transform_B(target)
 
@@ -149,53 +123,5 @@ def get_transform(train, size=256, HE_IF = "he"):
     # Adding transformation to both inputs
     
     transforms.append(T.RandomHorizontalFlip(0.5))
-    #
-        
+
     return T.Compose(transforms)
-
-def get_transform_N(opt, params=None, grayscale=False, method=transforms.InterpolationMode.BICUBIC, convert=True, Data_type = "HE" ):
-    #print(f"Transforming {Data_type} image ")
-    transform_list = []
-    if Data_type=="HE":
-        transform_list.append(transforms.ToPILImage())#**ADDIND** because transformations require PIL type 
-        if grayscale:
-            transform_list.append(transforms.Grayscale(1))
-        if opt.preprocess == 'none':
-            transform_list.append(transforms.Lambda(lambda img: __make_power_2(img, base=4, method=method)))
-
-        if not opt.no_flip:
-            if params is None:
-                transform_list.append(transforms.RandomHorizontalFlip())
-            elif params['flip']:
-                transform_list.append(transforms.Lambda(lambda img: __flip(img, params['flip'])))
-
-        if convert:
-            transform_list += [transforms.ToTensor()]
-            """
-            if grayscale:
-                transform_list += [transforms.Normalize((0.5,), (0.5,))]
-            elif:
-                transform_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-            """
-    else: 
-            transform_list = []
-            transform_list.append(transforms.ToTensor())
-     
-    # Shared augmentations
-    if 'resize' in opt.preprocess:
-            osize = [opt.load_size, opt.load_size]
-            transform_list.append(transforms.Resize(osize, method))
-    elif 'scale_width' in opt.preprocess:
-            transform_list.append(transforms.Lambda(lambda img: __scale_width(img, opt.load_size, opt.crop_size, method)))
-
-    if 'crop' in opt.preprocess:
-            if params is None:
-                transform_list.append(transforms.RandomCrop(opt.crop_size))
-            else:
-                transform_list.append(transforms.Lambda(lambda img: __crop(img, params['crop_pos'], opt.crop_size)))
-    #transform_list.append(transforms.RandomHorizontalFlip(0.5))
-    #transform_list.append(transforms.RandomVerticalFlip(0.5))
-    #transform_list.append(transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)))
-    return transforms.Compose(transform_list)
-        
-print("loaded")

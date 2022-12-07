@@ -7,55 +7,7 @@ import os
 import skimage
 from skimage import io
 
-
 def tensor2im(input_image, imtype=np.uint8):
-    """"Converts a Tensor array into a numpy image array.
-    Parameters:
-        input_image (tensor) --  the input image tensor array
-        imtype (type)        --  the desired type of the converted numpy array
-    """
-    if not isinstance(input_image, np.ndarray):
-        if isinstance(input_image, torch.Tensor):  # get the data from a variable
-            image_tensor = input_image.data
-            """
-            if  input_image.min()>0:
-                image_tensor = input_image.data
-            else:
-                import torch.nn as nn
-                # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html
-                m = nn.Softmax(dim=1)
-                image_tensor = input_image.data
-                image_tensor = m(input_image)
-            """
-        else:
-            return input_image
-        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
-        #print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
-        import pdb
-        pdb.set_trace()
-    
-        if image_numpy.shape[0] == 1:  # grayscale to RGB
-            image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
-        
-        #image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=np.uint8)
-        # """
-        if np.absolute(image_numpy.max())>1.0 or np.absolute(image_numpy.min())>1.0:
-            
-            image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
-            
-            image_numpy = skimage.util.img_as_ubyte(image_numpy)
-        else:
-            image_numpy = skimage.util.img_as_ubyte(image_numpy)
-        #  """
-        #image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
-    else:  # if it is a numpy array, do nothing
-        image_numpy = input_image
-    image_numpy = (image_numpy + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling
-    image_numpy = image_numpy.astype(imtype)
-    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
-    return image_numpy
-
-def tensor2im_changed(input_image, imtype=np.uint8):
     """"Converts a Tensor array into a numpy image array.
     Parameters:
         input_image (tensor) --  the input image tensor array
@@ -99,6 +51,215 @@ def tensor2im_changed(input_image, imtype=np.uint8):
     print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
     return image_numpy
 
+
+def tensor2im3(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
+        print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+        """
+        At this stage:
+        min-max vals: [(0.27670017, 1.0137584)] and shape: [(3, 256, 256)]
+        So some values are above np.abs(1)
+        And there are cases when
+        [(-0.13854566, 0.84143025)] and shape: [(3, 256, 256)]
+        so some values are below np.abs(-1)
+        """
+    
+        if image_numpy.shape[0] == 1:  # grayscale to RGB
+            image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
+
+        if np.absolute(image_numpy.max())>1.0 or np.absolute(image_numpy.min())>1.0:
+            
+            image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
+            
+            image_numpy = skimage.util.img_as_ubyte(image_numpy)
+        else:
+            image_numpy = skimage.util.img_as_ubyte(image_numpy)
+    else:  # if it is a numpy array, do nothing
+        image_numpy = input_image
+    image_numpy = image_numpy.astype(imtype)
+    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    return image_numpy # shape is the same [CWH]
+
+
+
+def tensor2imv3(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
+        print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+        """
+        At this stage:
+        min-max vals: [(0.27670017, 1.0137584)] and shape: [(3, 256, 256)]
+        So some values are above np.abs(1)
+        And there are cases when
+        [(-0.13854566, 0.84143025)] and shape: [(3, 256, 256)]
+        so some values are below np.abs(-1)
+        """        
+        image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=np.uint8)
+    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    return image_numpy # Shape should be [W-H-C]
+def tensor2imv12(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+            """
+            if  input_image.min()>0:
+                image_tensor = input_image.data
+            else:
+                import torch.nn as nn
+                # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html
+                m = nn.Softmax(dim=1)
+                image_tensor = input_image.data
+                image_tensor = m(input_image)
+            """
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
+        print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    
+        if image_numpy.shape[0] == 1:  # grayscale to RGB
+            image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
+        
+        #image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=np.uint8)
+        # """
+        if np.absolute(image_numpy.max())>1.0 or np.absolute(image_numpy.min())>1.0:
+            
+            image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
+            
+            image_numpy = skimage.util.img_as_ubyte(image_numpy)
+        else:
+            image_numpy = skimage.util.img_as_ubyte(image_numpy)
+        #  """
+        #image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
+    else:  # if it is a numpy array, do nothing
+        image_numpy = input_image
+    image_numpy = image_numpy.astype(imtype)
+    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    return image_numpy
+
+def tensor2im_winner_2(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
+        print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+        """
+        At this stage:
+        min-max vals: [(0.27670017, 1.0137584)] and shape: [(3, 256, 256)]
+        So some values are above np.abs(1)
+        And there are cases when
+        [(-0.13854566, 0.84143025)] and shape: [(3, 256, 256)]
+        so some values are below np.abs(-1)
+        """        
+        image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=np.uint8)
+    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    return image_numpy # Shape should be [W-H-C]
+
+def tensor2imv0(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy array
+        #image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=(0,1))# ensure on range {0,1}
+        if image_numpy.shape[0] == 1:  # grayscale to RGB
+            image_numpy = np.tile(image_numpy, (3, 1, 1))
+        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling
+    else:  # if it is a numpy array, do nothing
+        image_numpy = input_image
+    
+    image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=(0,255))# ensure on range {0,1}
+    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    return image_numpy.astype(imtype)
+
+
+def tensor2imv2(input_image, imtype=np.uint8):
+    """"Converts a Tensor array into a numpy image array.
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+            """
+            if  input_image.min()>0:
+                image_tensor = input_image.data
+            else:
+                import torch.nn as nn
+                # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html
+                m = nn.Softmax(dim=1)
+                image_tensor = input_image.data
+                image_tensor = m(input_image)
+            """
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy array {C-W-H}
+        #print(f"[before]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+        #import pdb
+        #pdb.set_trace()
+    
+        if image_numpy.shape[0] == 1:  # grayscale to RGB
+            image_numpy = np.tile(image_numpy, (3, 1, 1))# repeat channel 1, 3 times to ressemble RGB
+        
+        #""" 
+        if np.absolute(image_numpy.max())>1.0 or np.absolute(image_numpy.min())>1.0:
+            
+            #image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
+            image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=(0,1))# ensure on range {0,1}
+    
+            image_numpy = skimage.util.img_as_ubyte(image_numpy)
+        else:
+            image_numpy = skimage.util.img_as_ubyte(image_numpy)
+        #"""
+        #image_numpy = (np.transpose(skimage.util.img_as_ubyte(image_numpy), (1,2,0)))
+    else:  # if it is a numpy array, do nothing
+        image_numpy = input_image
+    
+    image_numpy = skimage.exposure.rescale_intensity(image_numpy, out_range=(0,1))# ensure on range {0,1}
+        
+    image_numpy = (image_numpy + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling; orig range is {0,1}, after {}
+    image_numpy = image_numpy.astype(imtype)
+    print(f"[after]Range for Generated result]-> [{image_numpy.min(), image_numpy.max()}] and shape: [{image_numpy.shape}]")
+    return image_numpy
+
 def diagnose_network(net, name='network'):
     """Calculate and print the mean of average absolute(gradients)
     Parameters:
@@ -116,6 +277,18 @@ def diagnose_network(net, name='network'):
     print(name)
     print(mean)
 
+def save_image(image_numpy, image_path, aspect_ratio=1.0):
+    """Save a numpy image to the disk
+    Parameters:
+        image_numpy (numpy array) -- input numpy array
+        image_path (str)          -- the path of the image
+    """
+    print("Saving image on path ", image_path, "and shape: ", image_numpy.shape)
+    #image_numpy = np.dstack([
+    #            skimage.exposure.rescale_intensity(image_numpy[:,:,c], out_range=(0, 255)) 
+    #            for c in range(image_numpy.shape[2])
+    #        ])
+    io.imsave(image_path, image_numpy)
 
 def save_imagev1(image_numpy, image_path):
     """Save a numpy image to the disk
@@ -128,7 +301,7 @@ def save_imagev1(image_numpy, image_path):
     image_pil.save(image_path)
 
 
-def save_image(image_numpy, image_path, aspect_ratio=1.0):
+def save_image3(image_numpy, image_path, aspect_ratio=1.0):
     """Save a numpy image to the disk
     Parameters:
         image_numpy (numpy array) -- input numpy array
@@ -136,7 +309,7 @@ def save_image(image_numpy, image_path, aspect_ratio=1.0):
     """
     io.imsave(image_path, image_numpy)
     
-def save_image_v3(image_numpy, image_path, aspect_ratio=1.0):
+def save_imagev3(image_numpy, image_path, aspect_ratio=1.0):
     """Save a numpy image to the disk
     Parameters:
         image_numpy (numpy array) -- input numpy array
@@ -144,12 +317,15 @@ def save_image_v3(image_numpy, image_path, aspect_ratio=1.0):
     """
 
     image_pil = Image.fromarray(image_numpy)
+    print(f"bef storing shape: {image_pil}")
     h, w, _ = image_numpy.shape
 
     if aspect_ratio > 1.0:
         image_pil = image_pil.resize((h, int(w * aspect_ratio)), Image.BICUBIC)
     if aspect_ratio < 1.0:
         image_pil = image_pil.resize((int(h / aspect_ratio), w), Image.BICUBIC)
+    
+    print(f"bef storing shape: {image_pil}")
     image_pil.save(image_path)
 
 

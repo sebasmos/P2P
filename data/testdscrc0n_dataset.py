@@ -23,6 +23,8 @@ from skimage import io
 import tifffile
 import skimage 
 import skimage.exposure
+import torchvision
+import torchvision.transforms as T
 
 class testdscrc0nDataset(BaseDataset):
     """
@@ -52,8 +54,8 @@ class testdscrc0nDataset(BaseDataset):
         btoA = self.opt.direction == 'BtoA'
         input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
         output_nc = self.opt.input_nc if btoA else self.opt.output_nc      # get the number of channels of output image
-        self.transform_A = get_transform_N(self.opt, grayscale=(input_nc == 1), Data_type = "HE")
-        self.transform_B = get_transform_N(self.opt, grayscale=(input_nc == 1), Data_type = "IF")
+        self.transform_A = get_transform(train= True, size=256, HE_IF = "he")
+        self.transform_B = get_transform(train= True, size=256, HE_IF = "if")
         #self.transform_B = get_transform_N(train=True, size=256 , HE_IF = "IF")
         assert self.A_size == self.B_size, "Every instance of A must have a corresponding instance of B!"
 
@@ -82,14 +84,14 @@ class testdscrc0nDataset(BaseDataset):
             target = tifffile.imread(B_paths)
             target = skimage.util.img_as_float32(target)#**ADDED**
             # Normalize images
-            CHANNELS = range(19)#(0, 3,17) - (0, 3,1,17,2,4)# 6 channels
+            CHANNELS = (0, 3,17)# - (0, 3,1,17,2,4)# 6 channels
             #CHANNELS = (0, 3,1,17,2) # 5 channels
             #CHANNELS = (0,3,1,4,2,9,8,6,10,11,15)
             img = np.moveaxis(img, 0, 2)
             target = np.dstack([
                 skimage.exposure.rescale_intensity(
                     target[c],
-                    in_range=(np.percentile(target[c], 1), np.percentile(target[c], 99.9)),#**ADDED**: reduce clipping to 1%
+                    in_range=(np.percentile(target[c], 0.17), np.percentile(target[c], 99.99)),#**ADDED**: reduce clipping to 1%
                     out_range=(0, 1)
                 ) 
                 for c in CHANNELS
@@ -111,6 +113,17 @@ class testdscrc0nDataset(BaseDataset):
         we take a maximum of
         """
         return max(self.A_size, self.B_size)
+def get_transform(train, size=256, HE_IF = "he"):
+    transforms = []
+    transforms.append(T.ToTensor())
+    if train:
+        if HE_IF=="he":
+            transforms.append(T.Resize((size,size)))
+        elif HE_IF=="if":
+            transforms.append(T.Resize((size,size)))
+        else:
+            transforms.append(T.Resize((size,size)))
+    return T.Compose(transforms)
 
 def get_transform_N(opt, params=None, grayscale=False, method=transforms.InterpolationMode.BICUBIC, convert=True, Data_type = "HE" ):
     #print(f"Transforming {Data_type} image ")

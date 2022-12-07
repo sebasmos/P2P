@@ -1,5 +1,4 @@
 
-
 """
 When detecting object with >3 channels, arrray/object tensor is created to avoid storing format
 """
@@ -56,7 +55,10 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256, use_w
         txts.append(label)
         links.append(image_name)
         if use_wandb:
-            ims_dict[label] = wandb.Image(im[:,:,:3])# **ADDED**: for several channels on wandb
+            if im.shape[2]>17:
+                ims_dict[label] = wandb.Image(im[:,:,[0,3,17]])
+            else:
+                ims_dict[label] = wandb.Image(im[:,:,:3])
     webpage.add_images(ims, txts, links, width=width)
     if use_wandb:
         wandb.log(ims_dict)
