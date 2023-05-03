@@ -21,18 +21,12 @@ def tensor2im(input_image, imtype=np.uint8):
         image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy arra
         if image_numpy.shape[0] == 1: 
             image_numpy = np.tile(image_numpy, (3, 1, 1))
-        
-        if np.absolute(image_numpy.max())>1.0 or np.absolute(image_numpy.min())>1.0:
-            
-            image_numpy = (image_numpy-image_numpy.min())/(image_numpy.max()-image_numpy.min())
-            
-            image_numpy = skimage.util.img_as_ubyte(image_numpy)
-        else:
-            image_numpy = skimage.util.img_as_ubyte(image_numpy)
     else:  # if it is a numpy array, do nothing
         image_numpy = input_image
-    image_numpy = image_numpy.astype(imtype)
+    image_numpy = skimage.util.img_as_uint(image_numpy)
+    print("New range: ", image_numpy.min(), image_numpy.max() )
     return image_numpy
+
 def diagnose_network(net, name='network'):
     """Calculate and print the mean of average absolute(gradients)
 
