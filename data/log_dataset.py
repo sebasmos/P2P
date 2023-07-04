@@ -13,7 +13,7 @@ import torchvision.transforms as T
 from skimage import io
 import tifffile
 
-class rawDataset(BaseDataset):
+class logDataset(BaseDataset):
     """A dataset class for paired image dataset.
     It assumes that the directory '/path/to/data/train' contains image pairs in the form of {A,B}.
     During test time, you need to prepare a directory '/path/to/data/test'.
@@ -38,8 +38,27 @@ class rawDataset(BaseDataset):
         target = tifffile.imread(targets_path)
         target = skimage.util.img_as_float32(target)#**ADDED**
         img = np.moveaxis(img, 0, 2)
+        # Normalize images
+        CHANNELS = range(19)
+        log_img = np.log10(target, where=(target != 0))
+        #print("3: (max of log_img in float32) ", log_img.max(), log_img.shape)
+            
+        lower_cutoff_log = np.percentile(log_img.ravel(), 0.17)
+        upper_cutoff_log = np.percentile(log_img.ravel(), 99.99)
+        rescaled_log_img = (
+                (((1-0)*(log_img.ravel()-lower_cutoff_log)) /
+                (upper_cutoff_log-lower_cutoff_log)
+                ) + 0).reshape(log_img.shape)
+        #print("4: (max of rescaled_log_img in float32) ", rescaled_log_img.max(), rescaled_log_img.shape)
+            
+        target = np.clip(a=rescaled_log_img, a_min=0, a_max=1)
         target = np.moveaxis(target, 0, 2)
+        #print("5: (max of target in float32) ", target.max(), target.shape)
+        
         img, target = self.transforms_he(img), self.transforms_if(target)
+        #print("6: (max of target in float32) ", target.max(), target.shape)
+        #print(f"TARGET SIZE IN DATALOADER: ", target.shape, img.shape)
+        #return {'A': img, 'B': target, 'A_paths': img_path, 'B_paths': targets_path}
         return {'A': target, 'B': img, 'A_paths': targets_path, 'B_paths': img_path}
     
     def __len__(self):
